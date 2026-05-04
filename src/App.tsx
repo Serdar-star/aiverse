@@ -9,6 +9,7 @@ import {
   SkipForward, Eye, QrCode, Send, Package, Heart
 } from 'lucide-react';
 import { translations, expandedQuizzes as defaultQuizzes, categories, languages, Quiz } from './data';
+import { signInWithGoogle, signUpWithEmail, signInWithEmail, isFirebaseConfigured } from './firebase';
 
 /* ===== USER SYSTEM ===== */
 interface UserData {
@@ -559,25 +560,181 @@ function AdBanner({ size = 'large' }: { size?: 'large' | 'small' | 'native' | 'i
 
 /* ===== AUTH MODAL ===== */
 function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [mode, setMode] = useState<'login' | 'signup'>('signup'); const [name, setName] = useState(''); const [email, setEmail] = useState(''); const [err, setErr] = useState('');
+  const [mode, setMode] = useState<'login' | 'signup'>('signup');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
   if (!open) return null;
-  const handleSubmit = () => {
-    if (mode === 'signup') { if (!name.trim() || !email.trim() || !email.includes('@')) { setErr('Please fill all fields correctly'); return; }
-      const code = 'VM' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      saveUser({ ...DEFAULT_USER, username: name, email, joinedAt: new Date().toISOString(), lastLogin: new Date().toISOString(), streak: 1, referralCode: code });
-      toast(`Welcome ${name}! 🎉 +50 XP bonus!`, 'success', <Sparkles className="w-4 h-4" />); onClose(); window.location.reload();
-    } else { const existing = getUser(); if (existing && existing.email === email) { existing.lastLogin = new Date().toISOString(); existing.streak += 1; saveUser(existing); toast(`Welcome back! Streak: ${existing.streak} days 🔥`, 'success', <Flame className="w-4 h-4" />); onClose(); window.location.reload(); } else setErr('Account not found.'); }
+
+  const firebaseAvailable = isFirebaseConfigured();
+
+  const createLocalUser = (uname: string, uemail: string) => {
+    const code = 'VM' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    saveUser({ ...DEFAULT_USER, username: uname, email: uemail, joinedAt: new Date().toISOString(), lastLogin: new Date().toISOString(), streak: 1, referralCode: code, xp: 50 });
   };
-  return (<div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={onClose}><div className="absolute inset-0 bg-black/60 backdrop-blur-sm" /><div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
-    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 z-10"><X className="w-5 h-5 text-gray-400" /></button>
-    <div className="bg-gradient-to-br from-violet-600 to-pink-500 p-8 text-center"><Brain className="w-12 h-12 text-white mx-auto mb-3" /><h2 className="text-2xl font-black text-white" style={{ fontFamily: 'Space Grotesk' }}>{mode === 'signup' ? 'Join ViralMind' : 'Welcome Back'}</h2></div>
-    <div className="p-6 space-y-4">{err && <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 text-sm rounded-xl">{err}</div>}
-      {mode === 'signup' && <input value={name} onChange={e => { setName(e.target.value); setErr(''); }} placeholder="Username" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-violet-500 outline-none text-gray-900 dark:text-white" />}
-      <input value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} placeholder="Email" type="email" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-violet-500 outline-none text-gray-900 dark:text-white" />
-      <button onClick={handleSubmit} className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">{mode === 'signup' ? <><UserPlus className="w-5 h-5" /> Create Account</> : <><LogIn className="w-5 h-5" /> Sign In</>}</button>
-      <p className="text-center text-sm text-gray-500">{mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}<button onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setErr(''); }} className="text-violet-600 font-semibold hover:underline">{mode === 'signup' ? 'Sign In' : 'Sign Up'}</button></p></div>
-  </div></div>);
+
+  // Google sign in
+  const handleGoogle = async () => {
+    setLoading(true); setErr('');
+    try {
+      if (firebaseAvailable) {
+        const user = await signInWithGoogle();
+        createLocalUser(user.displayName || user.email?.split('@')[0] || 'Player', user.email || '');
+        toast(`Welcome ${user.displayName || 'there'}! 🎉`, 'success', <Sparkles className="w-4 h-4" />);
+      } else {
+        // Fallback: fake Google login for demo
+        const demoName = 'GoogleUser_' + Math.floor(Math.random() * 9999);
+        createLocalUser(demoName, demoName.toLowerCase() + '@gmail.com');
+        toast(`Welcome ${demoName}! 🎉 (Demo mode)`, 'success', <Sparkles className="w-4 h-4" />);
+      }
+      onClose(); window.location.reload();
+    } catch (e: any) {
+      setErr(e?.message || 'Google sign-in failed. Try again.');
+    }
+    setLoading(false);
+  };
+
+  // Email sign up / sign in
+  const handleEmailSubmit = async () => {
+    if (mode === 'signup') {
+      if (!name.trim() || name.trim().length < 2) { setErr('Username must be at least 2 characters'); return; }
+      if (!email.trim() || !email.includes('@') || !email.includes('.')) { setErr('Please enter a valid email'); return; }
+      if (password.length < 6) { setErr('Password must be at least 6 characters'); return; }
+    } else {
+      if (!email.trim()) { setErr('Please enter your email'); return; }
+      if (!password && !firebaseAvailable) { /* localStorage mode - no password needed */ }
+      else if (password.length < 6) { setErr('Please enter your password'); return; }
+    }
+
+    setLoading(true); setErr('');
+    try {
+      if (firebaseAvailable) {
+        if (mode === 'signup') {
+          const user = await signUpWithEmail(email, password, name);
+          createLocalUser(name, user.email || email);
+          toast(`Welcome ${name}! 🎉 +50 XP bonus!`, 'success', <Sparkles className="w-4 h-4" />);
+        } else {
+          const user = await signInWithEmail(email, password);
+          const existing = getUser();
+          if (existing) { existing.lastLogin = new Date().toISOString(); existing.streak += 1; saveUser(existing); }
+          else createLocalUser(user.displayName || email.split('@')[0], email);
+          toast(`Welcome back! 🔥`, 'success', <Flame className="w-4 h-4" />);
+        }
+      } else {
+        // localStorage fallback (no Firebase)
+        if (mode === 'signup') {
+          createLocalUser(name, email);
+          toast(`Welcome ${name}! 🎉 +50 XP bonus!`, 'success', <Sparkles className="w-4 h-4" />);
+        } else {
+          const existing = getUser();
+          if (existing && existing.email === email) {
+            existing.lastLogin = new Date().toISOString(); existing.streak += 1; saveUser(existing);
+            toast(`Welcome back! Streak: ${existing.streak} days 🔥`, 'success', <Flame className="w-4 h-4" />);
+          } else { setErr('Account not found. Please sign up first.'); setLoading(false); return; }
+        }
+      }
+      onClose(); window.location.reload();
+    } catch (e: any) {
+      const msg = e?.code === 'auth/email-already-in-use' ? 'Email already registered. Try signing in.' :
+                  e?.code === 'auth/user-not-found' ? 'Account not found. Please sign up.' :
+                  e?.code === 'auth/wrong-password' ? 'Wrong password. Try again.' :
+                  e?.code === 'auth/invalid-email' ? 'Invalid email address.' :
+                  e?.code === 'auth/too-many-requests' ? 'Too many attempts. Try again later.' :
+                  e?.message || 'Something went wrong. Try again.';
+      setErr(msg);
+    }
+    setLoading(false);
+  };
+
+  const inputClass = "w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none text-gray-900 dark:text-white transition-all";
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl hover:bg-white/20 z-10"><X className="w-5 h-5 text-white/70" /></button>
+
+        {/* Header */}
+        <div className="bg-gradient-to-br from-violet-600 to-pink-500 p-8 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+          <div className="relative">
+            <Brain className="w-14 h-14 text-white mx-auto mb-3" />
+            <h2 className="text-2xl font-black text-white" style={{ fontFamily: 'Space Grotesk' }}>
+              {mode === 'signup' ? 'Join ViralMind' : 'Welcome Back'}
+            </h2>
+            <p className="text-white/70 text-sm mt-1">
+              {mode === 'signup' ? 'Create an account and start your journey!' : 'Sign in to continue your quiz streak!'}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Error */}
+          {err && <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-center gap-2"><XCircle className="w-4 h-4 flex-shrink-0" />{err}</div>}
+
+          {/* Google Sign In */}
+          <button onClick={handleGoogle} disabled={loading}
+            className="w-full py-3.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-gray-700 dark:text-gray-300 disabled:opacity-50">
+            <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            {loading ? 'Signing in...' : 'Continue with Google'}
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+            <span className="text-xs text-gray-400 font-medium">OR</span>
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          </div>
+
+          {/* Username (signup only) */}
+          {mode === 'signup' && (
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">Username</label>
+              <input value={name} onChange={e => { setName(e.target.value); setErr(''); }} placeholder="QuizMaster2026" maxLength={20} className={inputClass} />
+            </div>
+          )}
+
+          {/* Email */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">Email</label>
+            <input value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} placeholder="you@example.com" type="email" className={inputClass} />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">Password {!firebaseAvailable && mode === 'login' && <span className="text-gray-400 font-normal">(optional in demo)</span>}</label>
+            <input value={password} onChange={e => { setPassword(e.target.value); setErr(''); }} placeholder="Min 6 characters" type="password" className={inputClass} />
+          </div>
+
+          {/* Submit */}
+          <button onClick={handleEmailSubmit} disabled={loading}
+            className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/25 transition-all disabled:opacity-50">
+            {loading ? <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</> :
+             mode === 'signup' ? <><UserPlus className="w-5 h-5" /> Create Account</> : <><LogIn className="w-5 h-5" /> Sign In</>}
+          </button>
+
+          {/* Switch mode */}
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setErr(''); setPassword(''); }} className="text-violet-600 dark:text-violet-400 font-semibold hover:underline">
+              {mode === 'signup' ? 'Sign In' : 'Sign Up Free'}
+            </button>
+          </p>
+
+          {/* Trust badges */}
+          <div className="flex items-center justify-center gap-4 pt-2 text-[10px] text-gray-400">
+            <span className="flex items-center gap-1">🔒 Secure</span>
+            <span className="flex items-center gap-1">🌍 50M+ Users</span>
+            <span className="flex items-center gap-1">⭐ 4.8 Rating</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ===== SEARCH MODAL ===== */

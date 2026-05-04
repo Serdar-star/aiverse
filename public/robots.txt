@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://viralmind.com/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
