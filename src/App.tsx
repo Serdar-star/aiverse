@@ -482,7 +482,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
     </div></ToastCtx.Provider>);
 }
 
-type Page = 'home' | 'trending' | 'premium' | 'play' | 'profile' | 'create' | 'leaderboard' | 'monetize' | 'community';
+type Page = 'home' | 'trending' | 'premium' | 'play' | 'profile' | 'create' | 'leaderboard' | 'monetize' | 'community' | 'about' | 'privacy' | 'terms';
 const PageCtx = createContext<{ page: Page; go: (p: Page) => void; quiz: Quiz | null; setQuiz: (q: Quiz | null) => void }>({ page: 'home', go: () => {}, quiz: null, setQuiz: () => {} });
 function usePage() { return useContext(PageCtx); }
 
@@ -865,9 +865,241 @@ function PremiumSection() { const { t } = useLang(); const plans = [{ n: t('prem
 function ReferralSection() { const { toast } = useToast(); const user = getUser(); const code = user?.referralCode || 'VIRAL2026'; return (<section className="py-12"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden"><div className="relative"><Gift className="w-12 h-12 text-white mx-auto mb-4" /><h3 className="text-2xl sm:text-3xl font-black text-white mb-3" style={{ fontFamily: 'Space Grotesk' }}>Invite Friends! 🎁</h3><p className="text-white/80 mb-6 max-w-lg mx-auto">Both get 1 month Pro free!</p><div className="flex items-center justify-center gap-3 max-w-md mx-auto"><div className="flex-1 bg-white/20 rounded-xl px-4 py-3 text-white font-mono font-bold text-lg">{code}</div><button onClick={() => { navigator.clipboard?.writeText(code); toast('Copied! 📋', 'success', <Copy className="w-4 h-4" />); }} className="px-6 py-3 bg-white text-emerald-600 font-bold rounded-xl">Copy</button></div></div></div></div></section>); }
 function FAQ() { const [open, setOpen] = useState<number | null>(null); const faqs = [{ q: 'Is ViralMind free?', a: 'Yes! Unlimited quizzes for free.' }, { q: 'How do I earn XP?', a: 'Every quiz earns 10-35 XP. Daily streaks give bonus XP!' }, { q: 'Can I create quizzes?', a: 'Pro members can use our quiz builder.' }, { q: 'How does sharing work?', a: 'Share via Web Share API or copy to clipboard.' }, { q: 'What are power-ups?', a: '50/50 removes 2 wrong answers, Skip skips a question, Hint gives a clue!' }]; return (<section className="py-16 bg-white dark:bg-gray-950"><div className="max-w-3xl mx-auto px-4"><h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-12 text-center" style={{ fontFamily: 'Space Grotesk' }}>❓ FAQ</h2><div className="space-y-3">{faqs.map((f, i) => (<div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden"><button onClick={() => setOpen(open === i ? null : i)} className="w-full flex items-center justify-between p-5 text-left"><span className="font-semibold text-gray-900 dark:text-white text-sm pr-4">{f.q}</span>{open === i ? <Minus className="w-5 h-5 text-gray-400 flex-shrink-0" /> : <Plus className="w-5 h-5 text-gray-400 flex-shrink-0" />}</button>{open === i && <div className="px-5 pb-5 text-gray-600 dark:text-gray-300 text-sm animate-fade-in">{f.a}</div>}</div>))}</div></div></section>); }
 function CTASection() { const { t } = useLang(); const { go, setQuiz } = usePage(); return (<section className="py-16 sm:py-24"><div className="max-w-7xl mx-auto px-4"><div className="relative bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 rounded-3xl p-8 sm:p-16 text-center overflow-hidden"><div className="relative"><Sparkles className="w-12 h-12 text-yellow-300 mx-auto mb-6" /><h2 className="text-3xl sm:text-5xl font-black text-white mb-6" style={{ fontFamily: 'Space Grotesk' }}>{t('cta_title')}</h2><p className="text-lg sm:text-xl text-white/80 mb-10 max-w-xl mx-auto">{t('cta_desc')}</p><button onClick={() => { setQuiz(defaultQuizzes[0]); go('play'); }} className="px-10 py-4 bg-white text-violet-600 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 inline-flex items-center gap-3"><Play className="w-5 h-5" />{t('cta_button')}<ArrowRight className="w-5 h-5" /></button></div></div></div></section>); }
-function Footer() { const { t } = useLang(); const { go } = usePage(); return (<footer className="bg-gray-900 dark:bg-black text-white"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"><div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12"><div className="col-span-2"><div className="flex items-center gap-2 mb-4"><div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-pink-500 rounded-xl flex items-center justify-center"><Brain className="w-6 h-6 text-white" /></div><span className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk' }}>ViralMind</span></div><p className="text-gray-400 text-sm mb-4 max-w-xs">{t('footer_desc')}</p><div className="flex gap-3">{['𝕏', '📘', '📸', '🎵', '▶️'].map((s, i) => <button key={i} className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center text-sm">{s}</button>)}</div></div>{[{ t: t('footer_product'), i: [t('footer_features'), t('footer_pricing')] }, { t: t('footer_company'), i: [t('footer_about'), t('footer_careers')] }, { t: t('footer_legal'), i: [t('footer_privacy'), t('footer_terms')] }].map((c, i) => (<div key={i}><h4 className="font-bold text-sm uppercase tracking-wider text-gray-400 mb-4">{c.t}</h4><ul className="space-y-2">{c.i.map((x, j) => <li key={j}><a href="#" className="text-gray-300 hover:text-white text-sm">{x}</a></li>)}</ul></div>))}</div>
-    <div className="mb-8"><button onClick={() => go('monetize')} className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl text-white font-bold flex items-center justify-center gap-3 hover:shadow-lg transition-all"><span className="text-xl">💰</span> Learn How to Earn Money <ArrowRight className="w-5 h-5" /></button></div>
-    <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4"><p className="text-gray-500 text-sm">© 2026 ViralMind. {t('footer_rights')}</p><p className="text-gray-500 text-sm">{t('footer_made')}</p></div></div></footer>); }
+function Footer() {
+  const { t } = useLang();
+  const { go } = usePage();
+  const productLinks = [
+    { label: t('footer_features'), action: () => go('trending') },
+    { label: t('footer_pricing'), action: () => go('premium') },
+    { label: 'Quizzes', action: () => go('trending') },
+    { label: 'Create Quiz', action: () => go('create') },
+    { label: 'Community', action: () => go('community') },
+  ];
+  const companyLinks = [
+    { label: t('footer_about'), action: () => go('about') },
+    { label: 'Leaderboard', action: () => go('leaderboard') },
+    { label: t('footer_contact'), action: () => window.open('mailto:hello@viralmind.com') },
+  ];
+  const legalLinks = [
+    { label: t('footer_privacy'), action: () => go('privacy') },
+    { label: t('footer_terms'), action: () => go('terms') },
+  ];
+  return (
+    <footer className="bg-gray-900 dark:bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+          {/* Brand */}
+          <div className="col-span-2">
+            <button onClick={() => go('home')} className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-pink-500 rounded-xl flex items-center justify-center"><Brain className="w-6 h-6 text-white" /></div>
+              <span className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk' }}>ViralMind</span>
+            </button>
+            <p className="text-gray-400 text-sm mb-4 max-w-xs leading-relaxed">{t('footer_desc')}</p>
+            <div className="flex gap-2">
+              {[{ icon: '𝕏', url: 'https://twitter.com' }, { icon: '📘', url: 'https://facebook.com' }, { icon: '📸', url: 'https://instagram.com' }, { icon: '🎵', url: 'https://tiktok.com' }].map((s, i) => (
+                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center text-sm transition-colors">{s.icon}</a>
+              ))}
+            </div>
+          </div>
+          {/* Product */}
+          <div>
+            <h4 className="font-bold text-sm uppercase tracking-wider text-gray-400 mb-4">{t('footer_product')}</h4>
+            <ul className="space-y-2.5">
+              {productLinks.map((l, j) => <li key={j}><button onClick={l.action} className="text-gray-300 hover:text-white text-sm transition-colors text-left">{l.label}</button></li>)}
+            </ul>
+          </div>
+          {/* Company */}
+          <div>
+            <h4 className="font-bold text-sm uppercase tracking-wider text-gray-400 mb-4">{t('footer_company')}</h4>
+            <ul className="space-y-2.5">
+              {companyLinks.map((l, j) => <li key={j}><button onClick={l.action} className="text-gray-300 hover:text-white text-sm transition-colors text-left">{l.label}</button></li>)}
+            </ul>
+          </div>
+          {/* Legal */}
+          <div>
+            <h4 className="font-bold text-sm uppercase tracking-wider text-gray-400 mb-4">{t('footer_legal')}</h4>
+            <ul className="space-y-2.5">
+              {legalLinks.map((l, j) => <li key={j}><button onClick={l.action} className="text-gray-300 hover:text-white text-sm transition-colors text-left">{l.label}</button></li>)}
+            </ul>
+          </div>
+        </div>
+        <div className="mb-8"><button onClick={() => go('monetize')} className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl text-white font-bold flex items-center justify-center gap-3 hover:shadow-lg transition-all"><span className="text-xl">💰</span> Learn How to Earn Money <ArrowRight className="w-5 h-5" /></button></div>
+        <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-gray-500 text-sm">© {new Date().getFullYear()} ViralMind. {t('footer_rights')}</p>
+          <p className="text-gray-500 text-sm">{t('footer_made')}</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ===== LEGAL & INFO PAGES ===== */
+function AboutPage() {
+  const { go } = usePage();
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-violet-50 to-white dark:from-gray-950 dark:to-gray-900 pt-28 pb-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <h1 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white mb-8 text-center" style={{ fontFamily: 'Space Grotesk' }}>About ViralMind</h1>
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-10 shadow-sm border border-gray-100 dark:border-gray-700 space-y-6 text-gray-600 dark:text-gray-300 leading-relaxed">
+          <div className="text-center mb-8"><span className="text-6xl">🧠</span></div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Our Mission</h2>
+          <p>ViralMind is the world's #1 viral quiz platform. We help millions of people discover themselves through fun, insightful, and scientifically-inspired personality tests, trivia challenges, and interactive quizzes.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">What We Offer</h2>
+          <ul className="list-disc pl-6 space-y-2">
+            <li><strong>12+ Quiz Categories</strong> — Personality, Love Language, IQ, Career, Spirit Animal, Psychology, Pop Culture, Food, and more</li>
+            <li><strong>120+ Unique Questions</strong> — All hand-crafted and available in 6 languages</li>
+            <li><strong>Community Quiz Creator</strong> — Build and share your own quizzes with the world</li>
+            <li><strong>Gamification</strong> — XP system, levels, badges, daily rewards, leaderboard</li>
+            <li><strong>Global Reach</strong> — Available in English, Turkish, Spanish, French, German, and Portuguese</li>
+          </ul>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Our Numbers</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[{ v: '50M+', l: 'Users' }, { v: '250K+', l: 'Quizzes' }, { v: '195', l: 'Countries' }, { v: '5M+', l: 'Daily Plays' }].map((s, i) => (
+              <div key={i} className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-4 text-center">
+                <div className="text-2xl font-black text-violet-600 dark:text-violet-400" style={{ fontFamily: 'Space Grotesk' }}>{s.v}</div>
+                <div className="text-xs text-gray-500 mt-1">{s.l}</div>
+              </div>
+            ))}
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Contact Us</h2>
+          <p>Have questions, feedback, or partnership inquiries? Reach out to us:</p>
+          <p>📧 <strong>hello@viralmind.com</strong></p>
+          <div className="pt-4"><button onClick={() => go('home')} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold rounded-xl">← Back to Home</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PrivacyPage() {
+  const { go } = usePage();
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 pt-28 pb-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-8 text-center" style={{ fontFamily: 'Space Grotesk' }}>🔒 Privacy Policy</h1>
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-10 shadow-sm border border-gray-100 dark:border-gray-700 space-y-5 text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+          <p className="text-xs text-gray-400">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">1. Information We Collect</h2>
+          <p>When you use ViralMind, we may collect the following information:</p>
+          <ul className="list-disc pl-6 space-y-1">
+            <li><strong>Account Information:</strong> Username, email address when you sign up</li>
+            <li><strong>Quiz Data:</strong> Your quiz answers and results (stored locally on your device)</li>
+            <li><strong>Usage Data:</strong> Pages visited, time spent, features used (via analytics)</li>
+            <li><strong>Device Information:</strong> Browser type, operating system, screen size</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">2. How We Use Your Information</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>To provide and improve the quiz experience</li>
+            <li>To save your progress, XP, badges, and quiz results</li>
+            <li>To display the leaderboard and community features</li>
+            <li>To show relevant advertisements (via Monetag and/or Google AdSense)</li>
+            <li>To analyze site usage and improve our services</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">3. Data Storage</h2>
+          <p>Most of your data (quiz results, XP, badges, settings) is stored <strong>locally on your device</strong> using localStorage. We do not store your quiz answers on our servers. If you sign in with Google or email, your authentication data is managed by Firebase (Google).</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">4. Third-Party Services</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li><strong>Firebase (Google):</strong> Authentication services</li>
+            <li><strong>Google Analytics:</strong> Anonymous usage statistics</li>
+            <li><strong>Monetag/Google AdSense:</strong> Advertising</li>
+            <li><strong>Vercel:</strong> Hosting</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">5. Cookies</h2>
+          <p>We use cookies for essential functionality (login sessions, preferences) and analytics. Third-party ad networks may also use cookies. You can manage cookie preferences through your browser settings.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">6. Your Rights</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>You can delete your account and all local data at any time from your profile</li>
+            <li>You can clear localStorage in your browser to remove all quiz data</li>
+            <li>You can opt out of analytics by using browser extensions like uBlock Origin</li>
+            <li>EU users have rights under GDPR including data access and deletion</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">7. Children's Privacy</h2>
+          <p>ViralMind is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">8. Contact</h2>
+          <p>For privacy-related inquiries: <strong>privacy@viralmind.com</strong></p>
+
+          <div className="pt-4"><button onClick={() => go('home')} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold rounded-xl">← Back to Home</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsPage() {
+  const { go } = usePage();
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 pt-28 pb-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-8 text-center" style={{ fontFamily: 'Space Grotesk' }}>📋 Terms of Service</h1>
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-10 shadow-sm border border-gray-100 dark:border-gray-700 space-y-5 text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+          <p className="text-xs text-gray-400">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">1. Acceptance of Terms</h2>
+          <p>By accessing and using ViralMind ("the Service"), you agree to be bound by these Terms of Service. If you disagree with any part, you may not access the Service.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">2. Description of Service</h2>
+          <p>ViralMind is an online quiz platform that provides personality tests, trivia quizzes, and interactive entertainment content. The Service includes free and premium features.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">3. User Accounts</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>You may create an account using Google or email/password</li>
+            <li>You are responsible for maintaining the security of your account</li>
+            <li>You must provide accurate information when creating an account</li>
+            <li>You must be at least 13 years old to use the Service</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">4. User-Generated Content</h2>
+          <p>When you create quizzes through our Community Quiz Creator:</p>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>You retain ownership of your content</li>
+            <li>You grant ViralMind a non-exclusive license to display and distribute your quizzes</li>
+            <li>You must not create content that is illegal, harmful, or violates others' rights</li>
+            <li>We reserve the right to remove content that violates these terms</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">5. Premium Subscriptions</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>Premium features are available through paid subscriptions</li>
+            <li>Payments are processed securely through Stripe</li>
+            <li>Subscriptions auto-renew unless cancelled</li>
+            <li>Refunds are available within 14 days of purchase</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">6. Prohibited Activities</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>Manipulating the XP system, leaderboard, or quiz results</li>
+            <li>Creating spam, offensive, or misleading quizzes</li>
+            <li>Attempting to hack, reverse-engineer, or disrupt the Service</li>
+            <li>Using bots or automated tools to interact with the Service</li>
+            <li>Impersonating other users or entities</li>
+          </ul>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">7. Disclaimer</h2>
+          <p>Quiz results are for entertainment purposes only and should not be considered professional psychological, medical, or career advice. ViralMind is provided "as is" without warranties of any kind.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">8. Limitation of Liability</h2>
+          <p>ViralMind shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Service.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">9. Changes to Terms</h2>
+          <p>We may update these Terms from time to time. Continued use of the Service constitutes acceptance of updated Terms.</p>
+
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">10. Contact</h2>
+          <p>For questions about these Terms: <strong>legal@viralmind.com</strong></p>
+
+          <div className="pt-4"><button onClick={() => go('home')} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold rounded-xl">← Back to Home</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ===== QUIZ PLAY (with Power-ups, Challenge, Viral Share, Comments, Timer, Keyboard, Sound) ===== */
 function QuizPlayPage() {
@@ -1821,7 +2053,7 @@ export default function App() {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [page]);
   useEffect(() => { const h = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true); } if (e.key === 'Escape') { setSearchOpen(false); setAuthOpen(false); } }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, []);
   useEffect(() => { const u = getUser(); if (u && !u.onboarded) setTimeout(() => setOnboardOpen(true), 2000); }, []);
-  const render = () => { switch (page) { case 'home': return <HomePage />; case 'trending': return <TrendingPage />; case 'premium': return <PremiumPage />; case 'play': return <QuizPlayPage />; case 'profile': return <ProfilePage />; case 'leaderboard': return <LeaderboardPage />; case 'create': return <CreateQuizPage />; case 'monetize': return <MonetizationPage />; case 'community': return <CommunityPage />; default: return <HomePage />; } };
+  const render = () => { switch (page) { case 'home': return <HomePage />; case 'trending': return <TrendingPage />; case 'premium': return <PremiumPage />; case 'play': return <QuizPlayPage />; case 'profile': return <ProfilePage />; case 'leaderboard': return <LeaderboardPage />; case 'create': return <CreateQuizPage />; case 'monetize': return <MonetizationPage />; case 'community': return <CommunityPage />; case 'about': return <AboutPage />; case 'privacy': return <PrivacyPage />; case 'terms': return <TermsPage />; default: return <HomePage />; } };
   return (<ThemeContext.Provider value={{ dark, toggle: () => setDark(d => !d) }}><LangProvider><ToastProvider><PageCtx.Provider value={{ page, go: setPage, quiz, setQuiz }}>
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white" style={{ fontFamily: 'Inter, sans-serif' }}>
       <Navbar onSearch={() => setSearchOpen(true)} onAuth={() => setAuthOpen(true)} onReward={() => setRewardOpen(true)} />
